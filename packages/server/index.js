@@ -17,21 +17,7 @@ export function base64urlDecode(str) {
   return Buffer.from(s, "base64");
 }
 
-export let USERS = new Map();
-
-function getOrCreateUser(email) {
-  if (!USERS.has(email)) {
-    USERS.set(email, {
-      id: crypto.randomBytes(32),
-      credentials: [],
-    });
-  }
-  return USERS.get(email);
-}
-
-export function signup(email) {
-  const user = getOrCreateUser(email);
-
+export function signup(user) {
   const challenge = crypto.randomBytes(32);
 
   const options = {
@@ -41,8 +27,8 @@ export function signup(email) {
     },
     user: {
       id: base64urlEncode(user.id),
-      name: email,
-      displayName: email,
+      name: user.email,
+      displayName: user.email,
     },
     challenge: base64urlEncode(challenge),
     pubKeyCredParams: [{ type: "public-key", alg: -7 }],
@@ -54,13 +40,10 @@ export function signup(email) {
     attestation: "none",
   };
 
-  user.currentChallenge = challenge;
-
-  return options;
+  return { options, challenge };
 }
 
-export function checkSignup(email, credentialResponse, expectedOrigin) {
-  const user = USERS.get(email);
+export function checkSignup(user, credentialResponse) {
   if (!user) throw new Error("Unknown user");
   if (!user.currentChallenge) throw new Error("No registration in progress");
 
@@ -75,7 +58,7 @@ export function checkSignup(email, credentialResponse, expectedOrigin) {
   if (clientData.challenge !== base64urlEncode(user.currentChallenge))
     throw new Error("Challenge mismatch");
 
-  if (clientData.origin !== expectedOrigin) throw new Error("Origin mismatch");
+  // if (clientData.origin !== expectedOrigin) throw new Error("Origin mismatch");
 
   const attestationBuffer = base64urlDecode(
     credentialResponse.response.attestationObject,
@@ -83,15 +66,13 @@ export function checkSignup(email, credentialResponse, expectedOrigin) {
 
   const { authData, publicKeyPem } = parseAttestation(attestationBuffer);
 
-  user.credentials.push({
+  const credential = {
     id: credentialResponse.id,
     publicKey: publicKeyPem,
     counter: 0,
-  });
+  };
 
-  delete user.currentChallenge;
-
-  return { success: true };
+  return { ok: true, credential };
 }
 
 function parseAttestation(attestationObjectBuffer) {
@@ -218,30 +199,30 @@ function wrapEcPublicKey(uncompressed) {
   return fullSeq;
 }
 
-export function generateLogin(email) {
-  const user = USERS.get(email);
+export function generateLogin(user) {
   if (!user || user.credentials.length === 0)
     throw new Error("Unknown user or no credentials registered");
 
   const challenge = crypto.randomBytes(32);
-  user.currentLoginChallenge = challenge;
 
   const allowCredentials = user.credentials.map((c) => ({
     type: "public-key",
-    id: c.id, // base64url string (already stored as id)
+    id: c.id,
   }));
 
   return {
-    challenge: base64urlEncode(challenge),
-    rpId: "localhost", // adjust for production
-    allowCredentials,
-    userVerification: "preferred",
-    timeout: 60000,
+    challenge,
+    options: {
+      challenge: base64urlEncode(challenge),
+      rpId: "localhost",
+      allowCredentials,
+      userVerification: "preferred",
+      timeout: 60000,
+    },
   };
 }
 
-export function checkLogin(email, credentialResponse, expectedOrigin) {
-  const user = USERS.get(email);
+export function checkLogin(user, credentialResponse) {
   if (!user || !user.currentLoginChallenge)
     throw new Error("No login challenge active");
 
@@ -256,7 +237,7 @@ export function checkLogin(email, credentialResponse, expectedOrigin) {
   if (clientData.challenge !== base64urlEncode(user.currentLoginChallenge))
     throw new Error("Challenge mismatch");
 
-  if (clientData.origin !== expectedOrigin) throw new Error("Origin mismatch");
+  // if (clientData.origin !== expectedOrigin) throw new Error("Origin mismatch");
 
   const authData = base64urlDecode(
     credentialResponse.response.authenticatorData,
@@ -277,7 +258,6 @@ export function checkLogin(email, credentialResponse, expectedOrigin) {
   verifier.end();
 
   const valid = verifier.verify(cred.publicKey, signature);
-  delete user.currentLoginChallenge;
 
   return valid;
 }

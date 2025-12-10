@@ -5,10 +5,18 @@
 
     async function handleSignup() {
         const res = await signup(ENDPOINT, "basunako@gmail.com");
+
+        if (res.ok) {
+            console.log("signed up!");
+        }
     }
 
     async function handleLogin() {
         const res = await login(ENDPOINT, "basunako@gmail.com");
+
+        if (res.ok) {
+            console.log("logged in!");
+        }
     }
 </script>
 
