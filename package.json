@@ -1,0 +1,35 @@
+{
+  "name": "pssk",
+  "version": "0.0.1",
+  "description": "",
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "./packages/server/index.js",
+  "browser": "./packages/browser/index.js",
+  "exports": {
+    ".": {
+      "node": "./packages/server/index.js",
+      "browser": "./packages/browser/index.js"
+    },
+    "./client": "./packages/browser/index.js",
+    "./server": "./packages/server/index.js"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@astrojs/svelte": "^7.2.2",
+    "@tailwindcss/vite": "^4.1.17",
+    "astro": "^5.16.4",
+    "cbor-x": "^1.6.0",
+    "svelte": "^5.45.8",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  }
+}
