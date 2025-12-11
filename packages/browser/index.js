@@ -1,19 +1,19 @@
-function bufferToBase64Url(buffer) {
-  let str = "";
-  const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
-  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
+const bufferToBase64Url = (buf) =>
+  btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 
-function base64UrlToBuffer(str) {
-  str = str.replace(/-/g, "+").replace(/_/g, "/");
-  const pad = 4 - (str.length % 4);
-  if (pad !== 4) str += "=".repeat(pad);
-  const decoded = atob(str);
-  const buf = new Uint8Array(decoded.length);
-  for (let i = 0; i < decoded.length; i++) buf[i] = decoded.charCodeAt(i);
-  return buf.buffer;
-}
+const base64UrlToBuffer = (s) =>
+  Uint8Array.from(
+    atob(
+      s
+        .replace(/-/g, "+")
+        .replace(/_/g, "/")
+        .padEnd(s.length + ((4 - (s.length % 4)) % 4), "="),
+    ),
+    (c) => c.charCodeAt(0),
+  ).buffer;
 
 export async function signup(endpoint, email) {
   const optionsResp = await fetch(endpoint + "/signup", {
@@ -88,5 +88,5 @@ export async function login(endpoint, email) {
   });
 
   const result = await check.json();
-  return result.success === true;
+  return result;
 }

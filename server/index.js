@@ -5,6 +5,7 @@ import {
   checkLogin,
 } from "../packages/server/index.js";
 
+import crypto from "node:crypto";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -29,20 +30,20 @@ function getOrCreateUser(email) {
 app.post("/signup", async (c) => {
   const { email } = await c.req.json();
 
-  const user = getOrCreateUser(email);
+  let user = getOrCreateUser(email);
 
-  const res = signup(user);
+  const signupOptions = await signup(user);
 
-  user.currentChallenge = res.challenge;
+  user.currentChallenge = signupOptions.challenge;
 
-  return c.json({ ok: true, options: res.options });
+  return c.json({ ok: true, options: signupOptions });
 });
 app.post("/check-signup", async (c) => {
   const { email, credential } = await c.req.json();
 
-  const user = USERS.get(email);
+  let user = USERS.get(email);
 
-  const res = checkSignup(user, credential);
+  const res = await checkSignup(user, credential);
 
   if (!res.ok) throw new Error("bad credential");
 
@@ -57,19 +58,21 @@ app.post("/login", async (c) => {
 
   const user = USERS.get(email);
 
-  const res = generateLogin(user);
+  let authOptions = await generateLogin(user);
 
-  user.currentLoginChallenge = res.challenge;
+  user.currentLoginChallenge = authOptions.challenge;
 
-  return c.json({ ok: true, options: res.options });
+  return c.json({ ok: true, options: authOptions });
 });
 
 app.post("/check-login", async (c) => {
   const { email, credential } = await c.req.json();
 
-  const user = USERS.get(email);
+  let user = USERS.get(email);
 
-  const res = checkLogin(user, credential);
+  const res = await checkLogin(user, credential);
+
+  if (!res) throw new Error("invalid login");
 
   delete user.currentLoginChallenge;
 
