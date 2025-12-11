@@ -1,7 +1,7 @@
 {
   "name": "pssk",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.0.2",
+  "description": "A Javascript library for passkey authentication.",
   "license": "MIT",
   "author": "",
   "type": "module",

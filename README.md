@@ -2,7 +2,7 @@
 
 # pssk 
 
-`pssk` is a Javascript library for passkey authentication via the standard Web Authentication API (WebAuthn).
+`pssk` is a Javascript library for passkey authentication via the standard Web Authentication API (WebAuthn) and @simplewebauthn/server.
 
 ## How it works
 
